@@ -18,7 +18,7 @@ const StoryPartSchema = z.object({
   translation: z
     .string()
     .describe(
-      "The translation of this part of the story in the source language.",
+      "The translation of the content of this part of the story in the source language.",
     ),
 });
 export type StoryPart = z.infer<typeof StoryPartSchema>;
@@ -126,7 +126,7 @@ const prompt = ai.definePrompt({
 
 **Your Process:**
 1.  Generate a complete story with an overall title.
-2.  Divide the story into a minimum of 3-4 distinct parts. Each part must have its own title, content, and translation.
+2.  Divide the story into a minimum of 3-4 distinct parts. Each part must have its own title, content, and translation of its content.
 3.  Create a comprehensive glossary of key terms from the entire story that are relevant to the learner's level.
 {{/if}}
 
