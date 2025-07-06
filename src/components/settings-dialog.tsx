@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect } from "react";
@@ -14,12 +13,35 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Form, FormControl, FormDescription as FormDescriptionComponent, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormDescription as FormDescriptionComponent,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import type { UserSettings } from "@/hooks/use-user-settings";
 
-const languages = ["English", "French", "German", "Italian", "Japanese", "Portuguese", "Spanish", "Turkish"];
+const languages = [
+  "English",
+  "French",
+  "German",
+  "Italian",
+  "Japanese",
+  "Portuguese",
+  "Spanish",
+  "Turkish",
+];
 const levels = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 const settingsSchema = z.object({
@@ -36,7 +58,12 @@ interface SettingsDialogProps {
   defaultValues: UserSettings;
 }
 
-export function SettingsDialog({ open, onOpenChange, onSave, defaultValues }: SettingsDialogProps) {
+export function SettingsDialog({
+  open,
+  onOpenChange,
+  onSave,
+  defaultValues,
+}: SettingsDialogProps) {
   const form = useForm<UserSettings>({
     resolver: zodResolver(settingsSchema),
     defaultValues,
@@ -57,18 +84,25 @@ export function SettingsDialog({ open, onOpenChange, onSave, defaultValues }: Se
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
-            Choose your default languages, learning level, and provide your API key.
+            Choose your default languages, learning level, and provide your API
+            key.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4 py-4"
+          >
             <FormField
               control={form.control}
               name="sourceLanguage"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Your Language</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select" />
@@ -76,7 +110,9 @@ export function SettingsDialog({ open, onOpenChange, onSave, defaultValues }: Se
                     </FormControl>
                     <SelectContent>
                       {languages.map((lang) => (
-                        <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                        <SelectItem key={lang} value={lang}>
+                          {lang}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -90,7 +126,10 @@ export function SettingsDialog({ open, onOpenChange, onSave, defaultValues }: Se
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Language to Learn</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select" />
@@ -98,7 +137,9 @@ export function SettingsDialog({ open, onOpenChange, onSave, defaultValues }: Se
                     </FormControl>
                     <SelectContent>
                       {languages.map((lang) => (
-                        <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                        <SelectItem key={lang} value={lang}>
+                          {lang}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -112,7 +153,10 @@ export function SettingsDialog({ open, onOpenChange, onSave, defaultValues }: Se
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Level (CEFR)</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select" />
@@ -120,7 +164,9 @@ export function SettingsDialog({ open, onOpenChange, onSave, defaultValues }: Se
                     </FormControl>
                     <SelectContent>
                       {levels.map((level) => (
-                        <SelectItem key={level} value={level}>{level}</SelectItem>
+                        <SelectItem key={level} value={level}>
+                          {level}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -135,13 +181,23 @@ export function SettingsDialog({ open, onOpenChange, onSave, defaultValues }: Se
                 <FormItem>
                   <FormLabel>Google AI API Key</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Enter your API key" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Enter your API key"
+                      {...field}
+                    />
                   </FormControl>
                   <FormDescriptionComponent>
-                    You can get your own API key from {" "}
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline">
-                       Google AI Studio
-                    </a>.
+                    You can get your own API key from{" "}
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      Google AI Studio
+                    </a>
+                    .
                   </FormDescriptionComponent>
                   <FormMessage />
                 </FormItem>

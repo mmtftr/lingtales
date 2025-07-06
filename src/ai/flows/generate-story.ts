@@ -1,4 +1,4 @@
-'use server';
+"use server";
 /**
  * @fileOverview Generates personalized stories in the target language with translations, summaries, and a glossary of terms.
  *
@@ -7,68 +7,73 @@
  * - GenerateStoryOutput - The return type for the generateStory function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from "@/ai/genkit";
+import { z } from "genkit";
 
 const StoryPartSchema = z.object({
-  title: z.string().describe('The title of this part of the story.'),
+  title: z.string().describe("The title of this part of the story."),
   content: z
     .string()
-    .describe(
-      'The content of this part of the story in the target language.'
-    ),
+    .describe("The content of this part of the story in the target language."),
   translation: z
     .string()
     .describe(
-      'The translation of this part of the story in the source language.'
+      "The translation of this part of the story in the source language.",
     ),
 });
 export type StoryPart = z.infer<typeof StoryPartSchema>;
 
 const GenerateStoryInputSchema = z.object({
-  prompt: z.string().describe('The prompt for the story.'),
-  genre: z.string().describe('The genre of the story.'),
+  prompt: z.string().describe("The prompt for the story."),
+  genre: z.string().describe("The genre of the story."),
   sourceLanguage: z
     .string()
     .describe("The user's source language for translations."),
-  targetLanguage: z.string().describe('The target language for the story.'),
+  targetLanguage: z.string().describe("The target language for the story."),
   level: z
     .string()
     .describe(
-      'The difficulty level of the story for the language learner, based on CEFR levels (e.g., A1, B2).'
+      "The difficulty level of the story for the language learner, based on CEFR levels (e.g., A1, B2).",
     ),
-  storyHistory: z.array(StoryPartSchema).optional().describe('The previous parts of the story, used to continue the narrative.'),
-  apiKey: z.string().optional().describe('The user-provided Google AI API key.'),
+  storyHistory: z
+    .array(StoryPartSchema)
+    .optional()
+    .describe(
+      "The previous parts of the story, used to continue the narrative.",
+    ),
+  apiKey: z
+    .string()
+    .optional()
+    .describe("The user-provided Google AI API key."),
 });
 export type GenerateStoryInput = z.infer<typeof GenerateStoryInputSchema>;
 
-
 const GlossaryItemSchema = z.object({
-  word: z.string().describe('The word from the story.'),
-  definition: z.string().describe('The definition of the word.'),
+  word: z.string().describe("The word from the story."),
+  definition: z.string().describe("The definition of the word."),
 });
 export type GlossaryItem = z.infer<typeof GlossaryItemSchema>;
 
 const GenerateStoryOutputSchema = z.object({
-  title: z.string().describe('The title of the generated story.'),
+  title: z.string().describe("The title of the generated story."),
   storyParts: z
     .array(StoryPartSchema)
-    .describe('The story broken down into titled parts.'),
+    .describe("The story broken down into titled parts."),
   glossary: z
     .array(GlossaryItemSchema)
-    .describe('A glossary of terms from the story.'),
+    .describe("A glossary of terms from the story."),
 });
 export type GenerateStoryOutput = z.infer<typeof GenerateStoryOutputSchema>;
 
 export async function generateStory(
-  input: GenerateStoryInput
+  input: GenerateStoryInput,
 ): Promise<GenerateStoryOutput> {
   return generateStoryFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'generateStoryPrompt',
-  model: 'googleai/gemini-2.5-pro',
+  name: "generateStoryPrompt",
+  model: "googleai/gemini-2.5-pro",
   system: `You are an expert language educator and a master storyteller. Your primary goal is to create compelling, coherent, and pedagogically sound stories for language learners.
 
 **Core Directives:**
@@ -84,8 +89,8 @@ const prompt = ai.definePrompt({
 - **C1 (Advanced):** Use sophisticated, idiomatic language naturally. The story can have complex, multi-layered plots and themes.
 - **C2 (Proficient):** The language should be rich, precise, and stylistically complex, equivalent to that of a native speaker in a literary context.
 `,
-  input: {schema: GenerateStoryInputSchema},
-  output: {schema: GenerateStoryOutputSchema},
+  input: { schema: GenerateStoryInputSchema },
+  output: { schema: GenerateStoryOutputSchema },
   prompt: `
 **Learner Profile:**
 - Source Language (for translations): {{{sourceLanguage}}}
@@ -131,14 +136,14 @@ Remember to provide your response in the exact JSON format specified by the outp
 
 const generateStoryFlow = ai.defineFlow(
   {
-    name: 'generateStoryFlow',
+    name: "generateStoryFlow",
     inputSchema: GenerateStoryInputSchema,
     outputSchema: GenerateStoryOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input, {
-      config: {apiKey: input.apiKey},
+  async (input) => {
+    const { output } = await prompt(input, {
+      config: { apiKey: input.apiKey },
     });
     return output!;
-  }
+  },
 );
