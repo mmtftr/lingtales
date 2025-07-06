@@ -43,13 +43,21 @@ import { SettingsDialog } from "@/components/settings-dialog";
 import { StoryArchive } from "@/components/story-archive";
 
 const genres = [
+  "Action",
+  "Adventure",
+  "Comedy",
+  "Crime",
+  "Drama",
   "Fantasy",
-  "Science Fiction",
+  "Historical Fiction",
+  "Horror",
   "Mystery",
   "Romance",
-  "Adventure",
-  "Historical Fiction",
-  "Fairy Tale",
+  "Science Fiction",
+  "Thriller",
+  "Epic Fantasy",
+  "Urban Fantasy",
+  "Steampunk",
 ];
 
 const generatorFormSchema = z.object({
