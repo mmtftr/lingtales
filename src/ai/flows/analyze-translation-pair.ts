@@ -1,26 +1,31 @@
-// 'use server';
+'use server';
 
 /**
- * @fileOverview A flow for analyzing a source language phrase and its target language translation using Gemini.
+ * @fileOverview A flow for having a conversation with Gemini about a source/target language translation pair.
  *
- * - analyzeTranslationPair - A function that takes a source phrase and its translation, and returns Gemini's analysis.
+ * - analyzeTranslationPair - A function that takes a source phrase, its translation, and a conversation history, and returns Gemini's response.
  * - AnalyzeTranslationPairInput - The input type for the analyzeTranslationPair function.
  * - AnalyzeTranslationPairOutput - The return type for the analyzeTranslationPair function.
  */
 
-'use server';
-
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+
+const ChatMessageSchema = z.object({
+  role: z.enum(['user', 'model']),
+  content: z.string(),
+});
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
 const AnalyzeTranslationPairInputSchema = z.object({
   sourcePhrase: z.string().describe('The phrase in the source language.'),
   targetPhrase: z.string().describe('The translation of the phrase in the target language.'),
+  history: z.array(ChatMessageSchema).describe('The conversation history.'),
 });
 export type AnalyzeTranslationPairInput = z.infer<typeof AnalyzeTranslationPairInputSchema>;
 
 const AnalyzeTranslationPairOutputSchema = z.object({
-  analysis: z.string().describe('Gemini\u2019s analysis of the source and target language phrase pair in markdown format.'),
+  response: z.string().describe('Gemini\u2019s response to the user in markdown format.'),
 });
 export type AnalyzeTranslationPairOutput = z.infer<typeof AnalyzeTranslationPairOutputSchema>;
 
@@ -32,7 +37,17 @@ const analyzeTranslationPairPrompt = ai.definePrompt({
   name: 'analyzeTranslationPairPrompt',
   input: {schema: AnalyzeTranslationPairInputSchema},
   output: {schema: AnalyzeTranslationPairOutputSchema},
-  prompt: `You are an expert linguist. Analyze the following source language phrase and its translation. Explain any nuances, differences in meaning, or cultural context that might be relevant. Provide your response in markdown format.\n\nSource Phrase: {{{sourcePhrase}}}\nTranslation: {{{targetPhrase}}}`,
+  prompt: `You are an expert linguist. Your task is to help a user understand the nuances of a translation.
+The user is analyzing the following translation pair:
+Source Phrase: {{{sourcePhrase}}}
+Translation: {{{targetPhrase}}}
+
+Below is the conversation history. Continue the conversation naturally based on the last user message.
+
+{{#each history}}
+{{this.role}}: {{{this.content}}}
+{{/each}}
+model:`,
 });
 
 const analyzeTranslationPairFlow = ai.defineFlow(
@@ -43,6 +58,6 @@ const analyzeTranslationPairFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await analyzeTranslationPairPrompt(input);
-    return output!;
+    return {response: output!.response};
   }
 );

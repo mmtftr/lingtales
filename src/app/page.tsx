@@ -19,8 +19,8 @@ import { StoryDisplay } from "@/components/story-display";
 import { LinguaTalesIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 
-const sourceLanguages = ["English", "Spanish", "French", "German"];
-const languages = ["Spanish", "French", "German", "Italian", "Portuguese", "Japanese"];
+const sourceLanguages = ["English", "French", "German", "Spanish", "Turkish"];
+const languages = ["English", "French", "German", "Italian", "Japanese", "Portuguese", "Spanish"];
 const levels = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const genres = ["Fantasy", "Science Fiction", "Mystery", "Romance", "Adventure", "Historical Fiction", "Fairy Tale"];
 
@@ -198,7 +198,7 @@ export default function Home() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select" />
-                            </SelectTrigger>
+                            </Trigger>
                           </FormControl>
                           <SelectContent>
                             {languages.map((lang) => (

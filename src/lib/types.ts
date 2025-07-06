@@ -14,7 +14,8 @@ import type {
 } from '@/ai/flows/generate-grammar-explanation';
 import type { 
     AnalyzeTranslationPairInput, 
-    AnalyzeTranslationPairOutput 
+    AnalyzeTranslationPairOutput,
+    ChatMessage
 } from '@/ai/flows/analyze-translation-pair';
 
 export type {
@@ -27,5 +28,6 @@ export type {
     GenerateGrammarExplanationInput,
     GenerateGrammarExplanationOutput,
     AnalyzeTranslationPairInput,
-    AnalyzeTranslationPairOutput
+    AnalyzeTranslationPairOutput,
+    ChatMessage
 };

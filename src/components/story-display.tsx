@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { Copy, HelpCircle, Languages, Loader2, ChevronRight } from "lucide-react";
+import React, { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Copy, HelpCircle, Languages, Loader2, ChevronRight, Send } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import type { GenerateStoryOutput, StoryPart } from "@/lib/types";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { GenerateStoryOutput, StoryPart, ChatMessage } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { generateGrammarExplanation } from "@/ai/flows/generate-grammar-explanation";
 import { analyzeTranslationPair } from "@/ai/flows/analyze-translation-pair";
+import { LinguaTalesIcon } from "@/components/icons";
 
 interface StoryDisplayProps {
   story: GenerateStoryOutput;
@@ -18,10 +23,17 @@ interface StoryDisplayProps {
 
 export function StoryDisplay({ story, targetLanguage }: StoryDisplayProps) {
   const { toast } = useToast();
+  
   const [isGrammarDialogOpen, setIsGrammarDialogOpen] = useState(false);
+  const [grammarModalContent, setGrammarModalContent] = useState({ title: "", content: "", isLoading: false });
+
   const [isAnalysisDialogOpen, setIsAnalysisDialogOpen] = useState(false);
+  const [analysisTarget, setAnalysisTarget] = useState<StoryPart | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
-  const [modalContent, setModalContent] = useState({ title: "", content: "", isLoading: false });
 
   const handleCopy = () => {
     const storyText = story.storyParts.map((part) => `${part.title}\n\n${part.content}`).join("\n\n---\n\n");
@@ -34,25 +46,48 @@ export function StoryDisplay({ story, targetLanguage }: StoryDisplayProps) {
   
   const handleGrammarExplanation = async (word: string) => {
     setIsGrammarDialogOpen(true);
-    setModalContent({ title: `Grammar: "${word}"`, content: "", isLoading: true });
+    setGrammarModalContent({ title: `Grammar: "${word}"`, content: "", isLoading: true });
     try {
       const result = await generateGrammarExplanation({ wordOrPhrase: word, language: targetLanguage });
-      setModalContent((prev) => ({ ...prev, content: result.explanation, isLoading: false }));
+      setGrammarModalContent((prev) => ({ ...prev, content: result.explanation, isLoading: false }));
     } catch (error) {
       console.error(error);
-      setModalContent((prev) => ({ ...prev, content: "Failed to load explanation.", isLoading: false }));
+      setGrammarModalContent((prev) => ({ ...prev, content: "Failed to load explanation.", isLoading: false }));
     }
   };
 
-  const handleTranslationAnalysis = async (part: StoryPart) => {
+  const handleTranslationAnalysis = (part: StoryPart) => {
+    setAnalysisTarget(part);
+    setChatMessages([
+      { role: "model", content: "I'm ready to analyze this translation pair. What would you like to know?" }
+    ]);
+    setChatInput("");
     setIsAnalysisDialogOpen(true);
-    setModalContent({ title: `Analysis: "${part.title}"`, content: "", isLoading: true });
+  };
+  
+  const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !analysisTarget) return;
+
+    const newUserMessage: ChatMessage = { role: "user", content: chatInput };
+    const newMessages: ChatMessage[] = [...chatMessages, newUserMessage];
+    
+    setChatMessages(newMessages);
+    setChatInput("");
+    setIsSendingMessage(true);
+
     try {
-      const result = await analyzeTranslationPair({ sourcePhrase: part.content, targetPhrase: part.translation });
-      setModalContent((prev) => ({ ...prev, content: result.analysis, isLoading: false }));
+      const result = await analyzeTranslationPair({
+        sourcePhrase: analysisTarget.content,
+        targetPhrase: analysisTarget.translation,
+        history: newMessages,
+      });
+      setChatMessages([...newMessages, { role: "model", content: result.response }]);
     } catch (error) {
       console.error(error);
-      setModalContent((prev) => ({ ...prev, content: "Failed to load analysis.", isLoading: false }));
+      setChatMessages([...newMessages, { role: "model", content: "Sorry, I encountered an error. Please try again." }]);
+    } finally {
+      setIsSendingMessage(false);
     }
   };
 
@@ -139,22 +174,70 @@ export function StoryDisplay({ story, targetLanguage }: StoryDisplayProps) {
         </>
       )}
       
-      <Dialog open={isGrammarDialogOpen || isAnalysisDialogOpen} onOpenChange={isGrammarDialogOpen ? setIsGrammarDialogOpen : setIsAnalysisDialogOpen}>
+      <Dialog open={isGrammarDialogOpen} onOpenChange={setIsGrammarDialogOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle className="font-headline">{modalContent.title}</DialogTitle>
+            <DialogTitle className="font-headline">{grammarModalContent.title}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto pr-2">
-            {modalContent.isLoading ? (
+            {grammarModalContent.isLoading ? (
               <div className="flex items-center justify-center h-48">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <pre className="whitespace-pre-wrap bg-muted p-4 rounded-md text-sm">{modalContent.content}</pre>
+                <div className="prose dark:prose-invert max-w-none p-2">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{grammarModalContent.content}</ReactMarkdown>
                 </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isAnalysisDialogOpen} onOpenChange={setIsAnalysisDialogOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
+            <DialogHeader>
+                <DialogTitle className="font-headline">Ask Gemini about the translation</DialogTitle>
+                {analysisTarget && <DialogDescription>"{analysisTarget.title}"</DialogDescription>}
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto pr-4 -mr-4">
+                <ScrollArea className="h-full">
+                    <div className="space-y-4 pr-4">
+                        {chatMessages.map((message, index) => (
+                            <div key={index} className={`flex items-end gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                {message.role === 'model' && <LinguaTalesIcon className="h-6 w-6 text-primary shrink-0"/>}
+                                <div className={`rounded-lg p-3 max-w-[80%] ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                    <ReactMarkdown components={{ p: ({node, ...props}) => <p className="m-0" {...props} /> }} remarkPlugins={[remarkGfm]} className="prose prose-sm dark:prose-invert max-w-none">
+                                        {message.content}
+                                    </ReactMarkdown>
+                                </div>
+                            </div>
+                        ))}
+                        {isSendingMessage && (
+                            <div className="flex items-end gap-2 justify-start">
+                                <LinguaTalesIcon className="h-6 w-6 text-primary shrink-0"/>
+                                <div className="rounded-lg p-3 bg-muted flex items-center">
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
+            </div>
+            <form onSubmit={handleSendMessage} className="mt-4">
+                <div className="flex gap-2">
+                    <Input
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder="Ask a question..."
+                        disabled={isSendingMessage}
+                        autoFocus
+                    />
+                    <Button type="submit" size="icon" disabled={isSendingMessage || !chatInput.trim()}>
+                        <Send className="h-4 w-4" />
+                        <span className="sr-only">Send message</span>
+                    </Button>
+                </div>
+            </form>
         </DialogContent>
       </Dialog>
     </div>
