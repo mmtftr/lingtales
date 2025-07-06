@@ -4,25 +4,27 @@
 import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Copy, HelpCircle, Languages, Loader2, ChevronRight, Send } from "lucide-react";
+import { Copy, HelpCircle, Languages, Loader2, ChevronRight, Send, Sparkles } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { GenerateStoryOutput, StoryPart, ChatMessage } from "@/lib/types";
+import type { GenerateStoryOutput, StoryPart, ChatMessage, ArchivedStory } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { generateGrammarExplanation } from "@/ai/flows/generate-grammar-explanation";
 import { analyzeTranslationPair } from "@/ai/flows/analyze-translation-pair";
 import { LinguaTalesIcon } from "@/components/icons";
 
 interface StoryDisplayProps {
-  story: GenerateStoryOutput;
+  story: ArchivedStory;
   targetLanguage: string;
+  onContinueStory: () => Promise<void>;
+  isGeneratingMore: boolean;
 }
 
-export function StoryDisplay({ story, targetLanguage }: StoryDisplayProps) {
+export function StoryDisplay({ story, targetLanguage, onContinueStory, isGeneratingMore }: StoryDisplayProps) {
   const { toast } = useToast();
   
   const [isGrammarDialogOpen, setIsGrammarDialogOpen] = useState(false);
@@ -135,6 +137,22 @@ export function StoryDisplay({ story, targetLanguage }: StoryDisplayProps) {
         ))}
       </div>
       
+       <div className="mt-6 flex justify-center">
+            <Button onClick={onContinueStory} disabled={isGeneratingMore}>
+                {isGeneratingMore ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                    </>
+                ) : (
+                    <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generate More
+                    </>
+                )}
+            </Button>
+        </div>
+
       {story.glossary.length > 0 && (
         <>
           <Button 

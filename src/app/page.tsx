@@ -36,13 +36,14 @@ export default function Home() {
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
+  const [isGeneratingMore, setIsGeneratingMore] = useState(false);
   const [isGeneratingKeywords, setIsGeneratingKeywords] = useState(false);
   const [activeStory, setActiveStory] = useState<ArchivedStory | null>(null);
   const [keywords, setKeywords] = useState<string[]>([]);
   
   const { toast } = useToast();
   const [userSettings, setUserSettings] = useUserSettings();
-  const { archivedStories, addStory, clearArchive } = useStoryArchive();
+  const { archivedStories, addStory, updateStory, clearArchive } = useStoryArchive();
 
   const generatorForm = useForm<GeneratorFormValues>({
     resolver: zodResolver(generatorFormSchema),
@@ -138,6 +139,44 @@ export default function Home() {
     }
   };
   
+  const handleContinueStory = async () => {
+    if (!activeStory) return;
+
+    setIsGeneratingMore(true);
+    try {
+        const result = await generateStory({
+            ...activeStory.params,
+            storyHistory: activeStory.storyParts,
+        });
+
+        const newStoryParts = [...activeStory.storyParts, ...result.storyParts];
+        
+        const existingGlossaryWords = new Set(activeStory.glossary.map(item => item.word));
+        const newGlossaryItems = result.glossary.filter(item => !existingGlossaryWords.has(item.word));
+        const newGlossary = [...activeStory.glossary, ...newGlossaryItems];
+        
+        const updatedStory: ArchivedStory = {
+            ...activeStory,
+            storyParts: newStoryParts,
+            glossary: newGlossary,
+        };
+
+        setActiveStory(updatedStory);
+        updateStory(updatedStory);
+
+    } catch (error) {
+        console.error(error);
+        toast({
+            variant: "destructive",
+            title: "Error continuing story",
+            description: "An unexpected error occurred. Please try again.",
+        });
+    } finally {
+        setIsGeneratingMore(false);
+    }
+  };
+
+
   const handleSelectStory = (story: ArchivedStory) => {
     setActiveStory(story);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -165,7 +204,7 @@ export default function Home() {
       </header>
 
       <main className="flex-1 container mx-auto p-4 md:p-8">
-        {isGeneratingStory && (
+        {(isGeneratingStory || isGeneratingMore) && !activeStory && (
           <div className="flex flex-col items-center justify-center h-full rounded-lg border border-dashed p-8 text-center animate-pulse">
             <LinguaTalesIcon className="h-16 w-16 text-muted-foreground/50" />
             <p className="font-headline text-xl mt-4 text-muted-foreground">Crafting your story...</p>
@@ -174,10 +213,15 @@ export default function Home() {
         )}
 
         {!isGeneratingStory && activeStory && (
-          <StoryDisplay story={activeStory} targetLanguage={activeStory.params.targetLanguage} />
+          <StoryDisplay 
+            story={activeStory} 
+            targetLanguage={activeStory.params.targetLanguage}
+            onContinueStory={handleContinueStory}
+            isGeneratingMore={isGeneratingMore}
+          />
         )}
 
-        {!isGeneratingStory && !activeStory && (
+        {!isGeneratingStory && !isGeneratingMore && !activeStory && (
           <div className="flex flex-col items-center justify-center h-full rounded-lg border border-dashed p-8 text-center">
             <LinguaTalesIcon className="h-16 w-16 text-muted-foreground/50" />
             <p className="font-headline text-xl mt-4 text-muted-foreground">Your story awaits</p>

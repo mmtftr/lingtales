@@ -10,21 +10,6 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const GenerateStoryInputSchema = z.object({
-  prompt: z.string().describe('The prompt for the story.'),
-  genre: z.string().describe('The genre of the story.'),
-  sourceLanguage: z
-    .string()
-    .describe("The user's source language for translations."),
-  targetLanguage: z.string().describe('The target language for the story.'),
-  level: z
-    .string()
-    .describe(
-      'The difficulty level of the story for the language learner, based on CEFR levels (e.g., A1, B2).'
-    ),
-});
-export type GenerateStoryInput = z.infer<typeof GenerateStoryInputSchema>;
-
 const StoryPartSchema = z.object({
   title: z.string().describe('The title of this part of the story.'),
   content: z
@@ -39,6 +24,23 @@ const StoryPartSchema = z.object({
     ),
 });
 export type StoryPart = z.infer<typeof StoryPartSchema>;
+
+const GenerateStoryInputSchema = z.object({
+  prompt: z.string().describe('The prompt for the story.'),
+  genre: z.string().describe('The genre of the story.'),
+  sourceLanguage: z
+    .string()
+    .describe("The user's source language for translations."),
+  targetLanguage: z.string().describe('The target language for the story.'),
+  level: z
+    .string()
+    .describe(
+      'The difficulty level of the story for the language learner, based on CEFR levels (e.g., A1, B2).'
+    ),
+  storyHistory: z.array(StoryPartSchema).optional().describe('The previous parts of the story, used to continue the narrative.'),
+});
+export type GenerateStoryInput = z.infer<typeof GenerateStoryInputSchema>;
+
 
 const GlossaryItemSchema = z.object({
   word: z.string().describe('The word from the story.'),
@@ -69,9 +71,6 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateStoryOutputSchema},
   prompt: `You are a creative writer who specializes in generating personalized stories for language learners.
 
-  Based on the prompt, target language, and learner's level, you will generate a story that includes a coherent plot outline, translations, and a glossary of terms.
-
-  Prompt: {{{prompt}}}
   Source Language (for translations): {{{sourceLanguage}}}
   Target Language: {{{targetLanguage}}}
   Learner Level (CEFR): {{{level}}}
@@ -86,12 +85,24 @@ const prompt = ai.definePrompt({
   - C1 (Advanced): Can use language flexibly and effectively for social, academic, and professional purposes.
   - C2 (Proficient): Can understand with ease virtually everything heard or read.
 
-  Break the story into multiple parts, each with a title, content in the target language, and a translation in the specified source language.  Include a glossary of key terms from the story with their definitions in the source language.
+  {{#if storyHistory}}
+  You are CONTINUING a story based on the history provided. The user's original prompt for the whole story was: "{{prompt}}".
+  Here are the previous parts of the story:
+  {{#each storyHistory}}
+  - Part "{{this.title}}": {{{this.content}}}
+  {{/each}}
+  
+  Your task is to generate ONLY THE NEXT PART of the story. Do not repeat the previous parts. Your output should contain one or more new story parts, each with a title, content, and translation. Also provide a glossary for any new vocabulary introduced in the new parts. When continuing a story, the 'title' field in your response can be an empty string, as it will be ignored.
+  
+  {{else}}
+  You are creating a NEW story based on the user's prompt: "{{prompt}}".
+
+  Your task is to generate a complete story with a title. Break the story into multiple parts, each with its own title, content, and translation. Provide a glossary for key vocabulary.
+  {{/if}}
+
+  Break the story content into one or more parts, each with a title, content in the target language, and a translation in the specified source language. Include a glossary of key terms from the story with their definitions in the source language.
 
   Ensure that the output is well-structured and easy to read.
-
-  Follow this output schema:
-  ${JSON.stringify(GenerateStoryOutputSchema.shape, null, 2)}
   `,
 });
 

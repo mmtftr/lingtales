@@ -18,9 +18,13 @@ export function useStoryArchive() {
         return newArchivedStory;
     };
 
+    const updateStory = (updatedStory: ArchivedStory) => {
+        setArchivedStories(prev => prev.map(s => s.id === updatedStory.id ? updatedStory : s));
+    }
+
     const clearArchive = () => {
         setArchivedStories([]);
     }
 
-    return { archivedStories, addStory, clearArchive };
+    return { archivedStories, addStory, updateStory, clearArchive };
 }
