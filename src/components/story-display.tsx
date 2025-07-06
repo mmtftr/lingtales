@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -99,32 +100,80 @@ export function StoryDisplay({
     context: "",
   });
 
-  const handleMouseUp = (partContent: string) => {
-    const selection = window.getSelection();
-    if (selection && selection.type === "Range") {
-      const selectedText = selection.toString().trim();
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      const selection = window.getSelection();
+
       if (
-        selectedText.length > 2 &&
-        selectedText !== explanationState.selectedPhrase
+        !selection ||
+        selection.isCollapsed ||
+        selection.rangeCount === 0
       ) {
+        if (explanationState.open) {
+          setExplanationState((prev) => ({ ...prev, open: false }));
+        }
+        return;
+      }
+
+      const selectedText = selection.toString().trim();
+      if (selectedText.length < 3) {
+        if (explanationState.open) {
+          setExplanationState((prev) => ({ ...prev, open: false }));
+        }
+        return;
+      }
+
+      if (
+        selectedText === explanationState.selectedPhrase &&
+        explanationState.open
+      ) {
+        return;
+      }
+
+      const anchorNode = selection.anchorNode;
+      if (!anchorNode) return;
+
+      const contentElement = (
+        anchorNode.nodeType === Node.TEXT_NODE
+          ? anchorNode.parentElement
+          : (anchorNode as HTMLElement)
+      )?.closest("[data-story-content]");
+
+      if (contentElement) {
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
+        const context = contentElement.textContent || "";
+
         setExplanationState({
           open: true,
           content: "",
           isLoading: true,
           targetRect: {
             ...rect,
+            top: rect.top + window.scrollY,
+            left: rect.left + window.scrollX,
+            bottom: rect.bottom + window.scrollY,
+            right: rect.right + window.scrollX,
+            x: rect.x + window.scrollX,
+            y: rect.y + window.scrollY,
             width: rect.width,
-            x: window.scrollX + rect.left,
-            y: window.scrollY + rect.y,
+            height: rect.height,
           },
           selectedPhrase: selectedText,
-          context: partContent,
+          context: context,
         });
+      } else {
+        if (explanationState.open) {
+          setExplanationState((prev) => ({ ...prev, open: false }));
+        }
       }
-    }
-  };
+    };
+
+    document.addEventListener("selectionchange", handleSelectionChange);
+    return () => {
+      document.removeEventListener("selectionchange", handleSelectionChange);
+    };
+  }, [explanationState.open, explanationState.selectedPhrase]);
 
   const handleExplanationOpenChange = (open: boolean) => {
     if (!open) {
@@ -136,7 +185,6 @@ export function StoryDisplay({
         selectedPhrase: "",
         context: "",
       });
-      window.getSelection()?.removeAllRanges();
     }
   };
 
@@ -287,7 +335,7 @@ export function StoryDisplay({
             <CardContent>
               <p
                 className="text-lg leading-relaxed mb-4"
-                onMouseUp={() => handleMouseUp(part.content)}
+                data-story-content="true"
               >
                 {part.content}
               </p>
