@@ -62,7 +62,7 @@ export function StoryDisplay({ story, onContinueStory, isGeneratingMore }: Story
                 open: true,
                 content: '',
                 isLoading: true,
-                targetRect: rect,
+                targetRect: {...rect, width: rect.width, x: window.scrollX + rect.left, y: window.scrollY + rect.y},
                 selectedPhrase: selectedText,
                 context: partContent,
             });
@@ -325,13 +325,13 @@ export function StoryDisplay({ story, onContinueStory, isGeneratingMore }: Story
         {explanationState.targetRect && (
           <PopoverAnchor
             style={{
-              position: 'fixed',
-              top: explanationState.targetRect.bottom,
-              left: explanationState.targetRect.left + explanationState.targetRect.width / 2,
+              position: 'absolute',
+              top: explanationState.targetRect.y,
+              left: explanationState.targetRect.x + explanationState.targetRect.width / 2,
             }}
           />
         )}
-        <PopoverContent className="w-80" side="bottom" align="center">
+        <PopoverContent className="max-w-80" side="bottom" align="center">
           {explanationState.isLoading ? (
             <div className="flex items-center justify-center p-2">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />

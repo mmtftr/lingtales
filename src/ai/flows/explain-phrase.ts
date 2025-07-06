@@ -41,7 +41,7 @@ export async function explainPhrase(
 
 const prompt = ai.definePrompt({
   name: 'explainPhrasePrompt',
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-2.5-flash-lite-preview-06-17',
   input: {schema: ExplainPhraseInputSchema},
   output: {schema: ExplainPhraseOutputSchema},
   prompt: `You are a language tutor. The user has selected a phrase from a text they are reading in {{targetLanguage}}.
