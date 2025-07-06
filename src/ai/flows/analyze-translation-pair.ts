@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -42,6 +43,7 @@ The user is analyzing the following translation pair:
 Source Phrase: {{{sourcePhrase}}}
 Translation: {{{targetPhrase}}}
 
+Respond in clear, conversational markdown. Do not wrap your entire response in a code block unless you are showing a code example.
 Below is the conversation history. Continue the conversation naturally based on the last user message.
 
 {{#each history}}

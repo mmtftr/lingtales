@@ -177,7 +177,7 @@ export default function Home() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select" />
-                            </Trigger>
+                            </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {sourceLanguages.map((lang) => (
@@ -199,7 +199,7 @@ export default function Home() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select" />
-                            </Trigger>
+                            </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {languages.map((lang) => (
@@ -223,7 +223,7 @@ export default function Home() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select" />
-                            </Trigger>
+                            </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {levels.map((level) => (
@@ -245,7 +245,7 @@ export default function Home() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a genre" />
-                            </Trigger>
+                            </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {genres.map((g) => (
