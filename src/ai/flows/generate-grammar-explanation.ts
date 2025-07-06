@@ -16,6 +16,7 @@ const GenerateGrammarExplanationInputSchema = z.object({
     .string()
     .describe('The word or phrase to generate a grammar explanation for.'),
   language: z.string().describe('The language of the word or phrase.'),
+  apiKey: z.string().optional().describe('The user-provided Google AI API key.'),
 });
 export type GenerateGrammarExplanationInput = z.infer<
   typeof GenerateGrammarExplanationInputSchema
@@ -55,7 +56,9 @@ const generateGrammarExplanationFlow = ai.defineFlow(
     outputSchema: GenerateGrammarExplanationOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(input, {
+      config: {apiKey: input.apiKey},
+    });
     return output!;
   }
 );

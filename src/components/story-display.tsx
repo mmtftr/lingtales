@@ -12,8 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { GenerateStoryOutput, StoryPart, ChatMessage, ArchivedStory, ExplainPhraseInput } from "@/lib/types";
+import type { ChatMessage, ArchivedStory, ExplainPhraseInput } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { useUserSettings } from "@/hooks/use-user-settings";
 import { generateGrammarExplanation } from "@/ai/flows/generate-grammar-explanation";
 import { analyzeTranslationPair } from "@/ai/flows/analyze-translation-pair";
 import { explainPhrase } from "@/ai/flows/explain-phrase";
@@ -21,19 +22,19 @@ import { LinguaTalesIcon } from "@/components/icons";
 
 interface StoryDisplayProps {
   story: ArchivedStory;
-  targetLanguage: string;
   onContinueStory: () => Promise<void>;
   isGeneratingMore: boolean;
 }
 
-export function StoryDisplay({ story, targetLanguage, onContinueStory, isGeneratingMore }: StoryDisplayProps) {
+export function StoryDisplay({ story, onContinueStory, isGeneratingMore }: StoryDisplayProps) {
   const { toast } = useToast();
+  const [userSettings] = useUserSettings();
   
   const [isGrammarDialogOpen, setIsGrammarDialogOpen] = useState(false);
   const [grammarModalContent, setGrammarModalContent] = useState({ title: "", content: "", isLoading: false });
 
   const [isAnalysisDialogOpen, setIsAnalysisDialogOpen] = useState(false);
-  const [analysisTarget, setAnalysisTarget] = useState<StoryPart | null>(null);
+  const [analysisTarget, setAnalysisTarget] = useState<typeof story.storyParts[0] | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -83,6 +84,7 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
         context: explanationState.context,
         sourceLanguage: story.params.sourceLanguage,
         targetLanguage: story.params.targetLanguage,
+        apiKey: userSettings.apiKey,
       };
       explainPhrase(params)
         .then(result => {
@@ -93,7 +95,7 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
           setExplanationState(prev => ({ ...prev, content: "Sorry, an error occurred while fetching the explanation.", isLoading: false }));
         });
     }
-  }, [explanationState.isLoading, explanationState.selectedPhrase, explanationState.context, story.params.sourceLanguage, story.params.targetLanguage]);
+  }, [explanationState.isLoading, explanationState.selectedPhrase, explanationState.context, story.params.sourceLanguage, story.params.targetLanguage, userSettings.apiKey]);
 
 
   const handleCopy = () => {
@@ -109,7 +111,7 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
     setIsGrammarDialogOpen(true);
     setGrammarModalContent({ title: `Grammar: "${word}"`, content: "", isLoading: true });
     try {
-      const result = await generateGrammarExplanation({ wordOrPhrase: word, language: targetLanguage });
+      const result = await generateGrammarExplanation({ wordOrPhrase: word, language: story.params.targetLanguage, apiKey: userSettings.apiKey });
       setGrammarModalContent((prev) => ({ ...prev, content: result.explanation, isLoading: false }));
     } catch (error) {
       console.error(error);
@@ -117,7 +119,7 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
     }
   };
 
-  const handleTranslationAnalysis = (part: StoryPart) => {
+  const handleTranslationAnalysis = (part: typeof story.storyParts[0]) => {
     setAnalysisTarget(part);
     setChatMessages([]);
     setChatInput("");
@@ -140,6 +142,7 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
         sourcePhrase: analysisTarget.content,
         targetPhrase: analysisTarget.translation,
         history: newMessages,
+        apiKey: userSettings.apiKey,
       });
       setChatMessages([...newMessages, { role: "model", content: result.response }]);
     } catch (error) {
@@ -157,7 +160,7 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="font-headline text-3xl">{story.title}</CardTitle>
-              <CardDescription>Your personalized story in {targetLanguage}.</CardDescription>
+              <CardDescription>Your personalized story in {story.params.targetLanguage}.</CardDescription>
             </div>
             <Button variant="outline" size="sm" onClick={handleCopy}>
               <Copy className="mr-2 h-4 w-4" />
@@ -196,7 +199,7 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
       </div>
       
        <div className="mt-6 flex justify-center">
-            <Button onClick={onContinueStory} disabled={isGeneratingMore}>
+            <Button onClick={onContinueStory} disabled={isGeneratingMore || !userSettings.apiKey}>
                 {isGeneratingMore ? (
                     <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -236,7 +239,7 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
                         <p className="font-semibold">{item.word}</p>
                         <p className="text-sm text-muted-foreground">{item.definition}</p>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => handleGrammarExplanation(item.word)}>
+                      <Button variant="ghost" size="sm" onClick={() => handleGrammarExplanation(item.word)} disabled={!userSettings.apiKey}>
                         Explain Grammar
                         <ChevronRight className="ml-1 h-4 w-4" />
                       </Button>
@@ -306,10 +309,10 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
                         placeholder="Ask a question..."
-                        disabled={isSendingMessage}
+                        disabled={isSendingMessage || !userSettings.apiKey}
                         autoFocus
                     />
-                    <Button type="submit" size="icon" disabled={isSendingMessage || !chatInput.trim()}>
+                    <Button type="submit" size="icon" disabled={isSendingMessage || !chatInput.trim() || !userSettings.apiKey}>
                         <Send className="h-4 w-4" />
                         <span className="sr-only">Send message</span>
                     </Button>

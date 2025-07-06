@@ -20,6 +20,7 @@ const ExplainPhraseInputSchema = z.object({
     .string()
     .describe('The language in which to provide the explanation.'),
   targetLanguage: z.string().describe('The language of the phrase and context.'),
+  apiKey: z.string().optional().describe('The user-provided Google AI API key.'),
 });
 export type ExplainPhraseInput = z.infer<typeof ExplainPhraseInputSchema>;
 
@@ -58,7 +59,9 @@ const explainPhraseFlow = ai.defineFlow(
     outputSchema: ExplainPhraseOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(input, {
+      config: {apiKey: input.apiKey},
+    });
     return output!;
   }
 );

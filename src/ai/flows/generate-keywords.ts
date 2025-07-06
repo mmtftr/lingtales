@@ -14,6 +14,7 @@ import {z} from 'genkit';
 const GenerateKeywordsInputSchema = z.object({
   genre: z.string().describe('The genre of the story.'),
   targetLanguage: z.string().describe('The target language for the story.'),
+  apiKey: z.string().optional().describe('The user-provided Google AI API key.'),
 });
 export type GenerateKeywordsInput = z.infer<typeof GenerateKeywordsInputSchema>;
 
@@ -49,7 +50,9 @@ const generateKeywordsFlow = ai.defineFlow(
     outputSchema: GenerateKeywordsOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(input, {
+      config: {apiKey: input.apiKey},
+    });
     return output!;
   }
 );

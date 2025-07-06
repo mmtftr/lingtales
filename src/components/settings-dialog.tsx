@@ -14,8 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription as FormDescriptionComponent, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import type { UserSettings } from "@/hooks/use-user-settings";
 
 const languages = ["English", "French", "German", "Italian", "Japanese", "Portuguese", "Spanish", "Turkish"];
@@ -25,6 +26,7 @@ const settingsSchema = z.object({
   sourceLanguage: z.string().min(1, "Please select a language."),
   targetLanguage: z.string().min(1, "Please select a language."),
   level: z.string().min(1, "Please select a level."),
+  apiKey: z.string().optional(),
 });
 
 interface SettingsDialogProps {
@@ -55,7 +57,7 @@ export function SettingsDialog({ open, onOpenChange, onSave, defaultValues }: Se
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
-            Choose your default languages and learning level. You can change these anytime.
+            Choose your default languages, learning level, and provide your API key.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -122,6 +124,25 @@ export function SettingsDialog({ open, onOpenChange, onSave, defaultValues }: Se
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="apiKey"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Google AI API Key</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="Enter your API key" {...field} />
+                  </FormControl>
+                  <FormDescriptionComponent>
+                    You can get your own API key from {" "}
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline">
+                       Google AI Studio
+                    </a>.
+                  </FormDescriptionComponent>
                   <FormMessage />
                 </FormItem>
               )}

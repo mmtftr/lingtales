@@ -23,9 +23,11 @@ import type {
     ExplainPhraseOutput 
 } from '@/ai/flows/explain-phrase';
 
+export type StoryParams = Omit<GenerateStoryInput, 'apiKey'>;
+
 export interface ArchivedStory extends GenerateStoryOutput {
     id: string;
-    params: GenerateStoryInput;
+    params: StoryParams;
     createdAt: string;
 }
 

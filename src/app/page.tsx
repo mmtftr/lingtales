@@ -50,8 +50,10 @@ export default function Home() {
     defaultValues: { genre: "", prompt: "" },
   });
 
+  const isMissingSettings = !userSettings.targetLanguage || !userSettings.level || !userSettings.apiKey;
+
   useEffect(() => {
-    if (!userSettings.targetLanguage || !userSettings.level) {
+    if (isMissingSettings) {
       setIsSettingsOpen(true);
     } else if (archivedStories.length === 0) {
       setIsGeneratorOpen(true);
@@ -66,13 +68,13 @@ export default function Home() {
 
   const handleGenerateKeywords = useCallback(async (isAuto = false) => {
     const { genre } = generatorForm.getValues();
-    const { targetLanguage } = userSettings;
-    if (!genre || !targetLanguage) {
+    const { targetLanguage, apiKey } = userSettings;
+    if (!genre || !targetLanguage || !apiKey) {
       if (!isAuto) {
         toast({
           variant: "destructive",
           title: "Missing fields",
-          description: "Please set your language and select a genre to generate keywords.",
+          description: "Please set your language, API key and select a genre to generate keywords.",
         });
       }
       return;
@@ -80,7 +82,7 @@ export default function Home() {
     setIsGeneratingKeywords(true);
     setKeywords([]);
     try {
-      const result = await generateKeywords({ genre, targetLanguage });
+      const result = await generateKeywords({ genre, targetLanguage, apiKey });
       setKeywords(result.keywords);
     } catch (error) {
       console.error(error);
@@ -97,12 +99,12 @@ export default function Home() {
   const watchedGenre = generatorForm.watch("genre");
 
   useEffect(() => {
-    if (userSettings.targetLanguage && watchedGenre) {
+    if (userSettings.targetLanguage && watchedGenre && userSettings.apiKey) {
       handleGenerateKeywords(true);
     } else {
       setKeywords([]);
     }
-  }, [userSettings.targetLanguage, watchedGenre, handleGenerateKeywords]);
+  }, [userSettings.targetLanguage, watchedGenre, userSettings.apiKey, handleGenerateKeywords]);
 
   const addKeywordToPrompt = (keyword: string) => {
     const currentPrompt = generatorForm.getValues("prompt");
@@ -118,6 +120,7 @@ export default function Home() {
       sourceLanguage: userSettings.sourceLanguage,
       targetLanguage: userSettings.targetLanguage,
       level: userSettings.level,
+      apiKey: userSettings.apiKey,
     };
 
     try {
@@ -147,6 +150,7 @@ export default function Home() {
         const result = await generateStory({
             ...activeStory.params,
             storyHistory: activeStory.storyParts,
+            apiKey: userSettings.apiKey,
         });
 
         const newStoryParts = [...activeStory.storyParts, ...result.storyParts];
@@ -215,7 +219,6 @@ export default function Home() {
         {!isGeneratingStory && activeStory && (
           <StoryDisplay 
             story={activeStory} 
-            targetLanguage={activeStory.params.targetLanguage}
             onContinueStory={handleContinueStory}
             isGeneratingMore={isGeneratingMore}
           />
@@ -244,7 +247,9 @@ export default function Home() {
           <DialogHeader>
             <DialogTitle className="font-headline text-2xl">Create Your Story</DialogTitle>
             <DialogDescription>
-              Using language <span className="font-bold">{userSettings.targetLanguage || "(set in settings)"}</span> at level <span className="font-bold">{userSettings.level || "(set in settings)"}</span>.
+              {isMissingSettings
+                ? "Please complete your settings before generating a story."
+                : `Using language ${userSettings.targetLanguage} at level ${userSettings.level}.`}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -285,7 +290,7 @@ export default function Home() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleGenerateKeywords(false)}
-                          disabled={isGeneratingKeywords || !watchedGenre || !userSettings.targetLanguage}
+                          disabled={isGeneratingKeywords || !watchedGenre || !userSettings.targetLanguage || !userSettings.apiKey}
                         >
                           {isGeneratingKeywords ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -316,7 +321,7 @@ export default function Home() {
                   </div>
                 )}
                 
-                <Button type="submit" disabled={isGeneratingStory} className="w-full">
+                <Button type="submit" disabled={isGeneratingStory || isMissingSettings} className="w-full">
                   {isGeneratingStory ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

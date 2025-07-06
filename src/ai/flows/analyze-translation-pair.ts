@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -22,6 +21,7 @@ const AnalyzeTranslationPairInputSchema = z.object({
   sourcePhrase: z.string().describe('The phrase in the source language.'),
   targetPhrase: z.string().describe('The translation of the phrase in the target language.'),
   history: z.array(ChatMessageSchema).describe('The conversation history.'),
+  apiKey: z.string().optional().describe('The user-provided Google AI API key.'),
 });
 export type AnalyzeTranslationPairInput = z.infer<typeof AnalyzeTranslationPairInputSchema>;
 
@@ -60,7 +60,9 @@ const analyzeTranslationPairFlow = ai.defineFlow(
     outputSchema: AnalyzeTranslationPairOutputSchema,
   },
   async input => {
-    const {output} = await analyzeTranslationPairPrompt(input);
+    const {output} = await analyzeTranslationPairPrompt(input, {
+      config: {apiKey: input.apiKey},
+    });
     return {response: output!.response};
   }
 );

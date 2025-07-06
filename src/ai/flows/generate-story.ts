@@ -38,6 +38,7 @@ const GenerateStoryInputSchema = z.object({
       'The difficulty level of the story for the language learner, based on CEFR levels (e.g., A1, B2).'
     ),
   storyHistory: z.array(StoryPartSchema).optional().describe('The previous parts of the story, used to continue the narrative.'),
+  apiKey: z.string().optional().describe('The user-provided Google AI API key.'),
 });
 export type GenerateStoryInput = z.infer<typeof GenerateStoryInputSchema>;
 
@@ -114,7 +115,9 @@ const generateStoryFlow = ai.defineFlow(
     outputSchema: GenerateStoryOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(input, {
+      config: {apiKey: input.apiKey},
+    });
     return output!;
   }
 );

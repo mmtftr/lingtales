@@ -7,12 +7,14 @@ export interface UserSettings {
     sourceLanguage: string;
     targetLanguage: string;
     level: string;
+    apiKey: string;
 }
 
 const defaultSettings: UserSettings = {
     sourceLanguage: 'English',
     targetLanguage: '',
     level: '',
+    apiKey: '',
 };
 
 export function useUserSettings() {
