@@ -13,6 +13,11 @@ import {z} from 'genkit';
 const GenerateStoryInputSchema = z.object({
   prompt: z.string().describe('The prompt for the story.'),
   targetLanguage: z.string().describe('The target language for the story.'),
+  level: z
+    .string()
+    .describe(
+      'The difficulty level of the story for the language learner (e.g., Beginner, Intermediate, Advanced).'
+    ),
 });
 export type GenerateStoryInput = z.infer<typeof GenerateStoryInputSchema>;
 
@@ -20,7 +25,7 @@ const StoryPartSchema = z.object({
   title: z.string().describe('The title of this part of the story.'),
   content: z.string().describe('The content of this part of the story in the target language.'),
   translation: z.string().describe('The translation of this part of the story in the source language.'),
-  summary: z.string().describe('A summary of this part of the story.'),
+
 });
 export type StoryPart = z.infer<typeof StoryPartSchema>;
 
@@ -47,12 +52,18 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateStoryOutputSchema},
   prompt: `You are a creative writer who specializes in generating personalized stories for language learners.
 
-  Based on the prompt and target language provided, you will generate a story that includes a coherent plot outline, translations, summaries, and a glossary of terms.
+  Based on the prompt, target language, and learner's level, you will generate a story that includes a coherent plot outline, translations, and a glossary of terms.
 
   Prompt: {{{prompt}}}
   Target Language: {{{targetLanguage}}}
+  Learner Level: {{{level}}}
 
-  The story should be engaging and relevant to the user's interests. Break the story into multiple parts, each with a title, content in the target language, a translation, and a summary.  Include a glossary of key terms from the story with their definitions.
+  The story should be engaging and relevant to the user's interests, and tailored to their specified learning level. 
+  - A 'Beginner' level story should use simple vocabulary and sentence structures. 
+  - An 'Intermediate' level story can have more complex sentences.
+  - An 'Advanced' or 'Fluent' level story can be much more complex and use more nuanced vocabulary.
+
+  Break the story into multiple parts, each with a title, content in the target language, and a translation.  Include a glossary of key terms from the story with their definitions.
 
   Ensure that the output is well-structured and easy to read. The translation should be in the user's source language, which is English.
 

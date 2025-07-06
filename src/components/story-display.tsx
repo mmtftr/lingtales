@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, HelpCircle, Languages, Loader2, BookOpen, ChevronRight } from "lucide-react";
+import { Copy, HelpCircle, Languages, Loader2, ChevronRight } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import type { GenerateStoryOutput, StoryPart } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { generateGrammarExplanation } from "@/ai/flows/generate-grammar-explanation";
@@ -21,6 +20,7 @@ export function StoryDisplay({ story, targetLanguage }: StoryDisplayProps) {
   const { toast } = useToast();
   const [isGrammarDialogOpen, setIsGrammarDialogOpen] = useState(false);
   const [isAnalysisDialogOpen, setIsAnalysisDialogOpen] = useState(false);
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [modalContent, setModalContent] = useState({ title: "", content: "", isLoading: false });
 
   const handleCopy = () => {
@@ -73,64 +73,71 @@ export function StoryDisplay({ story, targetLanguage }: StoryDisplayProps) {
         </CardHeader>
       </Card>
 
-      <Tabs defaultValue="story">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="story"><BookOpen className="mr-2 h-4 w-4" /> Story</TabsTrigger>
-          <TabsTrigger value="glossary"><HelpCircle className="mr-2 h-4 w-4" /> Glossary</TabsTrigger>
-        </TabsList>
-        <TabsContent value="story" className="space-y-4">
-          {story.storyParts.map((part, index) => (
-            <Card key={index}>
-              <CardHeader>
-                <CardTitle className="font-headline">{part.title}</CardTitle>
-                <CardDescription>{part.summary}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-lg leading-relaxed mb-4">{part.content}</p>
-                <Accordion type="single" collapsible>
-                  <AccordionItem value="item-1">
-                    <AccordionTrigger>
-                      <span className="flex items-center text-sm font-semibold">
-                        <Languages className="mr-2 h-4 w-4" /> Show Translation & Analysis
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-4 space-y-4">
-                      <p className="text-base italic text-muted-foreground">{part.translation}</p>
-                      <Button variant="secondary" size="sm" onClick={() => handleTranslationAnalysis(part)}>
-                         Ask Gemini about this translation
-                      </Button>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-        <TabsContent value="glossary">
-          <Card>
+      <div className="space-y-4">
+        {story.storyParts.map((part, index) => (
+          <Card key={index}>
             <CardHeader>
-                <CardTitle className="font-headline">Glossary</CardTitle>
-                <CardDescription>Key terms from your story. Click a term for a grammar explanation.</CardDescription>
+              <CardTitle className="font-headline">{part.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-4">
-                {story.glossary.map((item, index) => (
-                  <li key={index} className="flex items-start justify-between p-3 rounded-md border hover:bg-muted/50">
-                    <div>
-                      <p className="font-semibold">{item.word}</p>
-                      <p className="text-sm text-muted-foreground">{item.definition}</p>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => handleGrammarExplanation(item.word)}>
-                      Explain Grammar
-                      <ChevronRight className="ml-1 h-4 w-4" />
+              <p className="text-lg leading-relaxed mb-4">{part.content}</p>
+              <Accordion type="single" collapsible>
+                <AccordionItem value="item-1">
+                  <AccordionTrigger>
+                    <span className="flex items-center text-sm font-semibold">
+                      <Languages className="mr-2 h-4 w-4" /> Show Translation & Analysis
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-4 space-y-4">
+                    <p className="text-base italic text-muted-foreground">{part.translation}</p>
+                    <Button variant="secondary" size="sm" onClick={() => handleTranslationAnalysis(part)}>
+                       Ask Gemini about this translation
                     </Button>
-                  </li>
-                ))}
-              </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        ))}
+      </div>
+      
+      {story.glossary.length > 0 && (
+        <>
+          <Button 
+            className="fixed bottom-8 right-8 rounded-full h-16 w-16 shadow-lg z-20" 
+            size="icon" 
+            onClick={() => setIsGlossaryOpen(true)}
+            aria-label="Open Glossary"
+          >
+            <HelpCircle className="h-8 w-8" />
+          </Button>
+
+          <Dialog open={isGlossaryOpen} onOpenChange={setIsGlossaryOpen}>
+            <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
+              <DialogHeader>
+                <DialogTitle className="font-headline">Glossary</DialogTitle>
+                <DialogDescription>Key terms from your story. Click a term for a grammar explanation.</DialogDescription>
+              </DialogHeader>
+              <div className="flex-1 overflow-y-auto pr-4 -mr-6">
+                <ul className="space-y-4">
+                  {story.glossary.map((item, index) => (
+                    <li key={index} className="flex items-start justify-between p-3 rounded-md border hover:bg-muted/50">
+                      <div>
+                        <p className="font-semibold">{item.word}</p>
+                        <p className="text-sm text-muted-foreground">{item.definition}</p>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => handleGrammarExplanation(item.word)}>
+                        Explain Grammar
+                        <ChevronRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
       
       <Dialog open={isGrammarDialogOpen || isAnalysisDialogOpen} onOpenChange={isGrammarDialogOpen ? setIsGrammarDialogOpen : setIsAnalysisDialogOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
