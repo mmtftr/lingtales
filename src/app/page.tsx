@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -19,11 +19,13 @@ import { StoryDisplay } from "@/components/story-display";
 import { LinguaTalesIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 
+const sourceLanguages = ["English", "Spanish", "French", "German"];
 const languages = ["Spanish", "French", "German", "Italian", "Portuguese", "Japanese"];
-const levels = ["Beginner", "Intermediate", "Advanced", "Fluent"];
+const levels = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const genres = ["Fantasy", "Science Fiction", "Mystery", "Romance", "Adventure", "Historical Fiction", "Fairy Tale"];
 
 const formSchema = z.object({
+  sourceLanguage: z.string().min(1, "Please select a source language."),
   targetLanguage: z.string().min(1, "Please select a language."),
   level: z.string().min(1, "Please select a level."),
   genre: z.string().min(1, "Please select a genre."),
@@ -37,12 +39,14 @@ export default function Home() {
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   const [isGeneratingKeywords, setIsGeneratingKeywords] = useState(false);
   const [story, setStory] = useState<GenerateStoryOutput | null>(null);
+  const [currentLanguage, setCurrentLanguage] = useState("");
   const [keywords, setKeywords] = useState<string[]>([]);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      sourceLanguage: "English",
       targetLanguage: "",
       level: "",
       genre: "",
@@ -50,17 +54,20 @@ export default function Home() {
     },
   });
 
-  const handleGenerateKeywords = async () => {
+  const handleGenerateKeywords = useCallback(async (isAuto = false) => {
     const { genre, targetLanguage } = form.getValues();
     if (!genre || !targetLanguage) {
-      toast({
-        variant: "destructive",
-        title: "Missing fields",
-        description: "Please select a language and genre to generate keywords.",
-      });
+      if (!isAuto) {
+        toast({
+          variant: "destructive",
+          title: "Missing fields",
+          description: "Please select a language and genre to generate keywords.",
+        });
+      }
       return;
     }
     setIsGeneratingKeywords(true);
+    setKeywords([]);
     try {
       const result = await generateKeywords({ genre, targetLanguage });
       setKeywords(result.keywords);
@@ -74,7 +81,18 @@ export default function Home() {
     } finally {
       setIsGeneratingKeywords(false);
     }
-  };
+  }, [form, toast]);
+
+  const targetLanguageValue = form.watch("targetLanguage");
+  const genreValue = form.watch("genre");
+
+  useEffect(() => {
+    if (targetLanguageValue && genreValue) {
+      handleGenerateKeywords(true);
+    } else {
+      setKeywords([]);
+    }
+  }, [targetLanguageValue, genreValue, handleGenerateKeywords]);
 
   const addKeywordToPrompt = (keyword: string) => {
     const currentPrompt = form.getValues("prompt");
@@ -87,8 +105,11 @@ export default function Home() {
     try {
       const result = await generateStory(data);
       setStory(result);
+      setCurrentLanguage(data.targetLanguage);
       setKeywords([]);
       setIsGeneratorOpen(false);
+      form.setValue("prompt", "");
+      form.setValue("genre", "");
     } catch (error) {
       console.error(error);
       toast({
@@ -124,7 +145,7 @@ export default function Home() {
           </div>
         )}
         {!isGeneratingStory && story && (
-            <StoryDisplay story={story} targetLanguage={form.getValues("targetLanguage")} />
+            <StoryDisplay story={story} targetLanguage={currentLanguage} />
         )}
         {!isGeneratingStory && !story && (
              <div className="flex flex-col items-center justify-center h-full rounded-lg border border-dashed p-8 text-center">
@@ -136,7 +157,7 @@ export default function Home() {
       </main>
 
       <Dialog open={isGeneratorOpen} onOpenChange={setIsGeneratorOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="font-headline text-2xl">Create Your Story</DialogTitle>
             <DialogDescription>Fill in the details below to generate your personalized language-learning tale.</DialogDescription>
@@ -145,12 +166,34 @@ export default function Home() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleGenerateStory)} className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="sourceLanguage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Your Language</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {sourceLanguages.map((lang) => (
+                              <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="targetLanguage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Language</FormLabel>
+                        <FormLabel>Language to Learn</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -167,12 +210,14 @@ export default function Home() {
                       </FormItem>
                     )}
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="level"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Level</FormLabel>
+                        <FormLabel>Level (CEFR)</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -189,29 +234,30 @@ export default function Home() {
                       </FormItem>
                     )}
                   />
+                   <FormField
+                    control={form.control}
+                    name="genre"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Genre</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a genre" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {genres.map((g) => (
+                              <SelectItem key={g} value={g}>{g}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-                 <FormField
-                  control={form.control}
-                  name="genre"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Genre</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a genre" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {genres.map((g) => (
-                            <SelectItem key={g} value={g}>{g}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                
                 <FormField
                   control={form.control}
                   name="prompt"
@@ -223,8 +269,8 @@ export default function Home() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={handleGenerateKeywords}
-                          disabled={isGeneratingKeywords}
+                          onClick={() => handleGenerateKeywords()}
+                          disabled={isGeneratingKeywords || !targetLanguageValue || !genreValue}
                         >
                           {isGeneratingKeywords ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
