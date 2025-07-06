@@ -18,6 +18,10 @@ import type {
     AnalyzeTranslationPairOutput,
     ChatMessage
 } from '@/ai/flows/analyze-translation-pair';
+import type { 
+    ExplainPhraseInput, 
+    ExplainPhraseOutput 
+} from '@/ai/flows/explain-phrase';
 
 export interface ArchivedStory extends GenerateStoryOutput {
     id: string;
@@ -36,5 +40,7 @@ export type {
     GenerateGrammarExplanationOutput,
     AnalyzeTranslationPairInput,
     AnalyzeTranslationPairOutput,
-    ChatMessage
+    ChatMessage,
+    ExplainPhraseInput,
+    ExplainPhraseOutput
 };

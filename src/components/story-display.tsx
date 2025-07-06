@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Copy, HelpCircle, Languages, Loader2, ChevronRight, Send, Sparkles } from "lucide-react";
@@ -9,12 +9,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { GenerateStoryOutput, StoryPart, ChatMessage, ArchivedStory } from "@/lib/types";
+import type { GenerateStoryOutput, StoryPart, ChatMessage, ArchivedStory, ExplainPhraseInput } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { generateGrammarExplanation } from "@/ai/flows/generate-grammar-explanation";
 import { analyzeTranslationPair } from "@/ai/flows/analyze-translation-pair";
+import { explainPhrase } from "@/ai/flows/explain-phrase";
 import { LinguaTalesIcon } from "@/components/icons";
 
 interface StoryDisplayProps {
@@ -37,6 +39,61 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
+
+  const [explanationState, setExplanationState] = useState<{
+    open: boolean;
+    content: string;
+    isLoading: boolean;
+    targetRect: DOMRect | null;
+    selectedPhrase: string;
+    context: string;
+  }>({ open: false, content: '', isLoading: false, targetRect: null, selectedPhrase: '', context: '' });
+
+
+  const handleMouseUp = (partContent: string) => {
+    const selection = window.getSelection();
+    if (selection && selection.type === 'Range') {
+        const selectedText = selection.toString().trim();
+        if (selectedText.length > 2 && selectedText !== explanationState.selectedPhrase) {
+            const range = selection.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+            setExplanationState({
+                open: true,
+                content: '',
+                isLoading: true,
+                targetRect: rect,
+                selectedPhrase: selectedText,
+                context: partContent,
+            });
+        }
+    }
+  };
+
+  const handleExplanationOpenChange = (open: boolean) => {
+    if (!open) {
+      setExplanationState({ open: false, content: '', isLoading: false, targetRect: null, selectedPhrase: '', context: '' });
+    }
+  };
+
+  useEffect(() => {
+    if (explanationState.isLoading && explanationState.selectedPhrase) {
+      const params: ExplainPhraseInput = {
+        phrase: explanationState.selectedPhrase,
+        context: explanationState.context,
+        sourceLanguage: story.params.sourceLanguage,
+        targetLanguage: story.params.targetLanguage,
+      };
+      explainPhrase(params)
+        .then(result => {
+          setExplanationState(prev => ({ ...prev, content: result.explanation, isLoading: false }));
+        })
+        .catch(error => {
+          console.error("Error fetching explanation:", error);
+          setExplanationState(prev => ({ ...prev, content: "Sorry, an error occurred while fetching the explanation.", isLoading: false }));
+        });
+    }
+  }, [explanationState.isLoading, explanationState.selectedPhrase, explanationState.context, story.params.sourceLanguage, story.params.targetLanguage]);
+
 
   const handleCopy = () => {
     const storyText = story.storyParts.map((part) => `${part.title}\n\n${part.content}`).join("\n\n---\n\n");
@@ -116,7 +173,7 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
               <CardTitle className="font-headline">{part.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-lg leading-relaxed mb-4">{part.content}</p>
+              <p className="text-lg leading-relaxed mb-4" onMouseUp={() => handleMouseUp(part.content)}>{part.content}</p>
               <Accordion type="single" collapsible>
                 <AccordionItem value="item-1">
                   <AccordionTrigger>
@@ -259,6 +316,27 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
             </form>
         </DialogContent>
       </Dialog>
+
+      <Popover open={explanationState.open} onOpenChange={handleExplanationOpenChange}>
+        {explanationState.targetRect && (
+          <PopoverAnchor
+            style={{
+              position: 'fixed',
+              top: explanationState.targetRect.bottom + window.scrollY,
+              left: explanationState.targetRect.left + window.scrollX + explanationState.targetRect.width / 2,
+            }}
+          />
+        )}
+        <PopoverContent className="w-80" side="top" align="center">
+          {explanationState.isLoading ? (
+            <div className="flex items-center justify-center p-2">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : (
+            <p className="text-sm">{explanationState.content}</p>
+          )}
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

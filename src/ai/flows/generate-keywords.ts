@@ -28,6 +28,7 @@ export async function generateKeywords(input: GenerateKeywordsInput): Promise<Ge
 
 const prompt = ai.definePrompt({
   name: 'generateKeywordsPrompt',
+  model: 'googleai/gemini-2.5-flash-lite-preview-06-17',
   input: {schema: GenerateKeywordsInputSchema},
   output: {schema: GenerateKeywordsOutputSchema},
   prompt: `You are a creative writing assistant. Your task is to suggest keywords for a story based on its genre and target language.

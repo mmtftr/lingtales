@@ -36,6 +36,7 @@ export async function analyzeTranslationPair(input: AnalyzeTranslationPairInput)
 
 const analyzeTranslationPairPrompt = ai.definePrompt({
   name: 'analyzeTranslationPairPrompt',
+  model: 'googleai/gemini-2.5-flash',
   input: {schema: AnalyzeTranslationPairInputSchema},
   output: {schema: AnalyzeTranslationPairOutputSchema},
   prompt: `You are an expert linguist. Your task is to help a user understand the nuances of a translation.

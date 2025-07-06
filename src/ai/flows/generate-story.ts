@@ -67,6 +67,7 @@ export async function generateStory(
 
 const prompt = ai.definePrompt({
   name: 'generateStoryPrompt',
+  model: 'googleai/gemini-2.5-pro',
   input: {schema: GenerateStoryInputSchema},
   output: {schema: GenerateStoryOutputSchema},
   prompt: `You are a creative writer who specializes in generating personalized stories for language learners.
