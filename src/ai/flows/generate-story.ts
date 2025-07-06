@@ -12,6 +12,7 @@ import {z} from 'genkit';
 
 const GenerateStoryInputSchema = z.object({
   prompt: z.string().describe('The prompt for the story.'),
+  genre: z.string().describe('The genre of the story.'),
   sourceLanguage: z
     .string()
     .describe("The user's source language for translations."),
@@ -74,6 +75,7 @@ const prompt = ai.definePrompt({
   Source Language (for translations): {{{sourceLanguage}}}
   Target Language: {{{targetLanguage}}}
   Learner Level (CEFR): {{{level}}}
+  Genre: {{{genre}}}
 
   The story should be engaging and relevant to the user's interests, and tailored to their specified learning level.
   CEFR levels guide vocabulary and grammar complexity:

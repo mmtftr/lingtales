@@ -1,3 +1,4 @@
+
 import type { 
     GenerateStoryInput, 
     GenerateStoryOutput,
@@ -17,6 +18,12 @@ import type {
     AnalyzeTranslationPairOutput,
     ChatMessage
 } from '@/ai/flows/analyze-translation-pair';
+
+export interface ArchivedStory extends GenerateStoryOutput {
+    id: string;
+    params: GenerateStoryInput;
+    createdAt: string;
+}
 
 export type {
     GenerateStoryInput,
