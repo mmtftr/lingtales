@@ -52,6 +52,7 @@ import { generateGrammarExplanation } from "@/ai/flows/generate-grammar-explanat
 import { analyzeTranslationPair } from "@/ai/flows/analyze-translation-pair";
 import { explainPhrase } from "@/ai/flows/explain-phrase";
 import { LinguaTalesIcon } from "@/components/icons";
+import { useDebouncedCallback } from 'use-debounce';
 
 interface StoryDisplayProps {
   story: ArchivedStory;
@@ -84,7 +85,7 @@ export function StoryDisplay({
 
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
 
-  const [explanationState, setExplanationState] = useState<{
+  const [explanationState, _setExplanationState] = useState<{
     open: boolean;
     content: string;
     isLoading: boolean;
@@ -99,6 +100,8 @@ export function StoryDisplay({
     selectedPhrase: "",
     context: "",
   });
+
+  const setExplanationState: typeof _setExplanationState = useDebouncedCallback((a) => _setExplanationState(a), 200);
 
   useEffect(() => {
     const handleSelectionChange = () => {
