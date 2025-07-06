@@ -72,6 +72,7 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
   const handleExplanationOpenChange = (open: boolean) => {
     if (!open) {
       setExplanationState({ open: false, content: '', isLoading: false, targetRect: null, selectedPhrase: '', context: '' });
+      window.getSelection()?.removeAllRanges();
     }
   };
 
@@ -322,12 +323,12 @@ export function StoryDisplay({ story, targetLanguage, onContinueStory, isGenerat
           <PopoverAnchor
             style={{
               position: 'fixed',
-              top: explanationState.targetRect.bottom + window.scrollY,
-              left: explanationState.targetRect.left + window.scrollX + explanationState.targetRect.width / 2,
+              top: explanationState.targetRect.bottom,
+              left: explanationState.targetRect.left + explanationState.targetRect.width / 2,
             }}
           />
         )}
-        <PopoverContent className="w-80" side="top" align="center">
+        <PopoverContent className="w-80" side="bottom" align="center">
           {explanationState.isLoading ? (
             <div className="flex items-center justify-center p-2">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
