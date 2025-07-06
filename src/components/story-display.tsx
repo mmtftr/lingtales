@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -58,9 +59,7 @@ export function StoryDisplay({ story, targetLanguage }: StoryDisplayProps) {
 
   const handleTranslationAnalysis = (part: StoryPart) => {
     setAnalysisTarget(part);
-    setChatMessages([
-      { role: "model", content: "I'm ready to analyze this translation pair. What would you like to know?" }
-    ]);
+    setChatMessages([]);
     setChatInput("");
     setIsAnalysisDialogOpen(true);
   };
@@ -206,9 +205,11 @@ export function StoryDisplay({ story, targetLanguage }: StoryDisplayProps) {
                             <div key={index} className={`flex items-end gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 {message.role === 'model' && <LinguaTalesIcon className="h-6 w-6 text-primary shrink-0"/>}
                                 <div className={`rounded-lg p-3 max-w-[80%] ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                                    <ReactMarkdown components={{ p: ({node, ...props}) => <p className="m-0" {...props} /> }} remarkPlugins={[remarkGfm]} className="prose prose-sm dark:prose-invert max-w-none">
-                                        {message.content}
-                                    </ReactMarkdown>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none text-current">
+                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                          {message.content}
+                                      </ReactMarkdown>
+                                    </div>
                                 </div>
                             </div>
                         ))}

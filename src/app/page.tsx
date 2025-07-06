@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
@@ -14,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { generateKeywords } from "@/ai/flows/generate-keywords";
 import { generateStory } from "@/ai/flows/generate-story";
-import type { GenerateStoryOutput } from "@/lib/types";
+import type { GenerateStoryOutput } from "@/ai/flows/generate-story";
 import { StoryDisplay } from "@/components/story-display";
 import { LinguaTalesIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
@@ -176,7 +177,7 @@ export default function Home() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select" />
-                            </SelectTrigger>
+                            </Trigger>
                           </FormControl>
                           <SelectContent>
                             {sourceLanguages.map((lang) => (
@@ -222,7 +223,7 @@ export default function Home() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select" />
-                            </SelectTrigger>
+                            </Trigger>
                           </FormControl>
                           <SelectContent>
                             {levels.map((level) => (
@@ -244,7 +245,7 @@ export default function Home() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a genre" />
-                            </SelectTrigger>
+                            </Trigger>
                           </FormControl>
                           <SelectContent>
                             {genres.map((g) => (
@@ -269,7 +270,7 @@ export default function Home() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleGenerateKeywords()}
+                          onClick={() => handleGenerateKeywords(false)}
                           disabled={isGeneratingKeywords || !targetLanguageValue || !genreValue}
                         >
                           {isGeneratingKeywords ? (
