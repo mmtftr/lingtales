@@ -1,18 +1,9 @@
-
 "use client";
 
-import React, { useState, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import {
-  Copy,
-  HelpCircle,
-  Languages,
-  Loader2,
-  ChevronRight,
-  Send,
-  Sparkles,
-} from "lucide-react";
+import { analyzeTranslationPair } from "@/ai/flows/analyze-translation-pair";
+import { explainPhrase } from "@/ai/flows/explain-phrase";
+import { generateGrammarExplanation } from "@/ai/flows/generate-grammar-explanation";
+import { StoryLearnerIcon } from "@/components/icons";
 import {
   Accordion,
   AccordionContent,
@@ -30,29 +21,37 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
-  PopoverContent,
   PopoverAnchor,
+  PopoverContent,
 } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type {
-  ChatMessage,
-  ArchivedStory,
-  ExplainPhraseInput,
-} from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useUserSettings } from "@/hooks/use-user-settings";
-import { generateGrammarExplanation } from "@/ai/flows/generate-grammar-explanation";
-import { analyzeTranslationPair } from "@/ai/flows/analyze-translation-pair";
-import { explainPhrase } from "@/ai/flows/explain-phrase";
-import { LinguaTalesIcon } from "@/components/icons";
-import { useDebouncedCallback } from 'use-debounce';
+import type {
+  ArchivedStory,
+  ChatMessage,
+  ExplainPhraseInput,
+} from "@/lib/types";
+import {
+  ChevronRight,
+  Copy,
+  HelpCircle,
+  Languages,
+  Loader2,
+  Send,
+  Sparkles,
+} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { useDebouncedCallback } from "use-debounce";
 
 interface StoryDisplayProps {
   story: ArchivedStory;
@@ -101,17 +100,19 @@ export function StoryDisplay({
     context: "",
   });
 
-  const setExplanationState: typeof _setExplanationState = useDebouncedCallback((a) => _setExplanationState(a), 200);
+  const setExplanationState: typeof _setExplanationState = useDebouncedCallback(
+    (a) => _setExplanationState(a),
+    200
+  );
+
+  // Cache explanations for exact same selection within the same content context
+  const explanationCacheRef = useRef<Map<string, string>>(new Map());
 
   useEffect(() => {
     const handleSelectionChange = () => {
       const selection = window.getSelection();
 
-      if (
-        !selection ||
-        selection.isCollapsed ||
-        selection.rangeCount === 0
-      ) {
+      if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
         if (explanationState.open) {
           setExplanationState((prev) => ({ ...prev, open: false }));
         }
@@ -146,25 +147,47 @@ export function StoryDisplay({
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
         const context = contentElement.textContent || "";
-
-        setExplanationState({
-          open: true,
-          content: "",
-          isLoading: true,
-          targetRect: {
-            ...rect,
-            top: rect.top + window.scrollY,
-            left: rect.left + window.scrollX,
-            bottom: rect.bottom + window.scrollY,
-            right: rect.right + window.scrollX,
-            x: rect.x + window.scrollX,
-            y: rect.y + window.scrollY,
-            width: rect.width,
-            height: rect.height,
-          },
-          selectedPhrase: selectedText,
-          context: context,
-        });
+        const cacheKey = `${selectedText}::${context}`;
+        const cached = explanationCacheRef.current.get(cacheKey);
+        if (cached) {
+          setExplanationState({
+            open: true,
+            content: cached,
+            isLoading: false,
+            targetRect: {
+              ...rect,
+              top: rect.top + window.scrollY,
+              left: rect.left + window.scrollX,
+              bottom: rect.bottom + window.scrollY,
+              right: rect.right + window.scrollX,
+              x: rect.x + window.scrollX,
+              y: rect.y + window.scrollY,
+              width: rect.width,
+              height: rect.height,
+            },
+            selectedPhrase: selectedText,
+            context: context,
+          });
+        } else {
+          setExplanationState({
+            open: true,
+            content: "",
+            isLoading: true,
+            targetRect: {
+              ...rect,
+              top: rect.top + window.scrollY,
+              left: rect.left + window.scrollX,
+              bottom: rect.bottom + window.scrollY,
+              right: rect.right + window.scrollX,
+              x: rect.x + window.scrollX,
+              y: rect.y + window.scrollY,
+              width: rect.width,
+              height: rect.height,
+            },
+            selectedPhrase: selectedText,
+            context: context,
+          });
+        }
       } else {
         if (explanationState.open) {
           setExplanationState((prev) => ({ ...prev, open: false }));
@@ -207,9 +230,12 @@ export function StoryDisplay({
             content: result.explanation,
             isLoading: false,
           }));
+          // Cache the explanation for this exact selection + context
+          const key = `${explanationState.selectedPhrase}::${explanationState.context}`;
+          explanationCacheRef.current.set(key, result.explanation);
         })
         .catch((error) => {
-          console.error("Error fetching explanation:", error);
+          console.error("Error fetching explanation", error);
           setExplanationState((prev) => ({
             ...prev,
             content: "Sorry, an error occurred while fetching the explanation.",
@@ -481,13 +507,19 @@ export function StoryDisplay({
                 {chatMessages.map((message, index) => (
                   <div
                     key={index}
-                    className={`flex items-end gap-2 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                    className={`flex items-end gap-2 ${
+                      message.role === "user" ? "justify-end" : "justify-start"
+                    }`}
                   >
                     {message.role === "model" && (
-                      <LinguaTalesIcon className="h-6 w-6 text-primary shrink-0" />
+                      <StoryLearnerIcon className="h-6 w-6 text-primary shrink-0" />
                     )}
                     <div
-                      className={`rounded-lg p-3 max-w-[80%] ${message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+                      className={`rounded-lg p-3 max-w-[80%] ${
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
+                      }`}
                     >
                       <div className="prose prose-sm dark:prose-invert max-w-none text-current">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -499,7 +531,7 @@ export function StoryDisplay({
                 ))}
                 {isSendingMessage && (
                   <div className="flex items-end gap-2 justify-start">
-                    <LinguaTalesIcon className="h-6 w-6 text-primary shrink-0" />
+                    <StoryLearnerIcon className="h-6 w-6 text-primary shrink-0" />
                     <div className="rounded-lg p-3 bg-muted flex items-center">
                       <Loader2 className="h-5 w-5 animate-spin" />
                     </div>
@@ -547,7 +579,17 @@ export function StoryDisplay({
             }}
           />
         )}
-        <PopoverContent className="max-w-80" side="bottom" align="center">
+        <PopoverContent
+          className="max-w-80"
+          side="bottom"
+          align="center"
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+          }}
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+          }}
+        >
           {explanationState.isLoading ? (
             <div className="flex items-center justify-center p-2">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />

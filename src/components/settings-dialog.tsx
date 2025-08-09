@@ -1,9 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,6 +18,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -29,8 +26,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import type { UserSettings } from "@/hooks/use-user-settings";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 const languages = [
   "English",
@@ -48,7 +48,7 @@ const settingsSchema = z.object({
   sourceLanguage: z.string().min(1, "Please select a language."),
   targetLanguage: z.string().min(1, "Please select a language."),
   level: z.string().min(1, "Please select a level."),
-  apiKey: z.string().optional(),
+  apiKey: z.string().default(""),
 });
 
 interface SettingsDialogProps {

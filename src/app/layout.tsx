@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/toaster";
+import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LinguaTales",
+  title: "StoryLearner",
   description:
     "Generate personalized stories to help you learn a new language.",
 };

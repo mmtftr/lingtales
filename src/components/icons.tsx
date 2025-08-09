@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-export function LinguaTalesIcon(props: SVGProps<SVGSVGElement>) {
+export function StoryLearnerIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

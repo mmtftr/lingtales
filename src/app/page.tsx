@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2, Settings, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Sparkles, Settings } from "lucide-react";
 
+import { generateKeywords } from "@/ai/flows/generate-keywords";
+import { generateStory } from "@/ai/flows/generate-story";
+import { StoryLearnerIcon } from "@/components/icons";
+import { SettingsDialog } from "@/components/settings-dialog";
+import { StoryArchive } from "@/components/story-archive";
+import { StoryDisplay } from "@/components/story-display";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,17 +37,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useStoryArchive } from "@/hooks/use-story-archive";
 import { useToast } from "@/hooks/use-toast";
 import { useUserSettings } from "@/hooks/use-user-settings";
-import { useStoryArchive } from "@/hooks/use-story-archive";
-import { generateKeywords } from "@/ai/flows/generate-keywords";
-import { generateStory } from "@/ai/flows/generate-story";
-import type { GenerateStoryInput, ArchivedStory } from "@/lib/types";
-import { StoryDisplay } from "@/components/story-display";
-import { LinguaTalesIcon } from "@/components/icons";
-import { Badge } from "@/components/ui/badge";
-import { SettingsDialog } from "@/components/settings-dialog";
-import { StoryArchive } from "@/components/story-archive";
+import type { ArchivedStory, GenerateStoryInput } from "@/lib/types";
 
 const genres = [
   "Action",
@@ -137,7 +137,7 @@ export default function Home() {
         setIsGeneratingKeywords(false);
       }
     },
-    [generatorForm, userSettings, toast],
+    [generatorForm, userSettings, toast]
   );
 
   const watchedGenre = generatorForm.watch("genre");
@@ -159,12 +159,12 @@ export default function Home() {
     const currentPrompt = generatorForm.getValues("prompt");
     generatorForm.setValue(
       "prompt",
-      currentPrompt ? `${currentPrompt}, ${keyword}` : keyword,
+      currentPrompt ? `${currentPrompt}, ${keyword}` : keyword
     );
   };
 
   const handleGenerateStory: SubmitHandler<GeneratorFormValues> = async (
-    data,
+    data
   ) => {
     setIsGeneratingStory(true);
     setActiveStory(null);
@@ -210,10 +210,10 @@ export default function Home() {
       const newStoryParts = [...activeStory.storyParts, ...result.storyParts];
 
       const existingGlossaryWords = new Set(
-        activeStory.glossary.map((item) => item.word),
+        activeStory.glossary.map((item) => item.word)
       );
       const newGlossaryItems = result.glossary.filter(
-        (item) => !existingGlossaryWords.has(item.word),
+        (item) => !existingGlossaryWords.has(item.word)
       );
       const newGlossary = [...activeStory.glossary, ...newGlossaryItems];
 
@@ -244,22 +244,26 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="p-4 border-b sticky top-0 bg-background/95 backdrop-blur-sm z-10">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <LinguaTalesIcon className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-headline font-bold text-primary">
-              LinguaTales
+      <header className="w-full p-4 border-b sticky top-0 bg-background/95 backdrop-blur-sm z-10">
+        <div className="container mx-auto flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <StoryLearnerIcon className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl font-headline font-bold text-primary truncate">
+              StoryLearner
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setIsSettingsOpen(true)}>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <Settings className="h-4 w-4 mr-0 sm:mr-2" />
+              <span className="hidden sm:inline">Settings</span>
             </Button>
-            <Button onClick={() => setIsGeneratorOpen(true)}>
-              <Sparkles className="mr-2 h-4 w-4" />
-              New Story
+            <Button size="sm" onClick={() => setIsGeneratorOpen(true)}>
+              <Sparkles className="h-4 w-4 mr-0 sm:mr-2" />
+              <span className="hidden sm:inline">New Story</span>
             </Button>
           </div>
         </div>
@@ -268,7 +272,7 @@ export default function Home() {
       <main className="flex-1 container mx-auto p-4 md:p-8">
         {(isGeneratingStory || isGeneratingMore) && !activeStory && (
           <div className="flex flex-col items-center justify-center h-full rounded-lg border border-dashed p-8 text-center animate-pulse">
-            <LinguaTalesIcon className="h-16 w-16 text-muted-foreground/50" />
+            <StoryLearnerIcon className="h-16 w-16 text-muted-foreground/50" />
             <p className="font-headline text-xl mt-4 text-muted-foreground">
               Crafting your story...
             </p>
@@ -289,7 +293,7 @@ export default function Home() {
 
         {!isGeneratingStory && !isGeneratingMore && !activeStory && (
           <div className="flex flex-col items-center justify-center h-full rounded-lg border border-dashed p-8 text-center">
-            <LinguaTalesIcon className="h-16 w-16 text-muted-foreground/50" />
+            <StoryLearnerIcon className="h-16 w-16 text-muted-foreground/50" />
             <p className="font-headline text-xl mt-4 text-muted-foreground">
               Your story awaits
             </p>
