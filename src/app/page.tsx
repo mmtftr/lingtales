@@ -12,6 +12,7 @@ import { StoryLearnerIcon } from "@/components/icons";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { StoryArchive } from "@/components/story-archive";
 import { StoryDisplay } from "@/components/story-display";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -253,6 +254,7 @@ export default function Home() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button
               variant="outline"
               size="sm"
